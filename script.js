@@ -10,6 +10,7 @@ class FundingTracker {
         this.START_PRICE = 3; // سعر أول سهم
         this.END_PRICE = 550; // سعر آخر سهم
         this.stocks = [];
+        this.stockUpdateInterval = null;
         this.loadFromStorage();
         this.initializeStocks();
         this.updateDisplay();
@@ -227,21 +228,34 @@ class FundingTracker {
                 volume: '890M'
             }
         ];
+        // Store initial prices for accurate percentage calculation
+        this.stocks.forEach(stock => {
+            stock.initialPrice = stock.price;
+        });
         this.updateStocksDisplay();
     }
     startStockUpdates() {
         // تحديث الأسعار كل 5 ثواني
-        setInterval(() => {
+        this.stockUpdateInterval = window.setInterval(() => {
             this.stocks.forEach(stock => {
                 // محاكاة تغيير السعر بنسبة عشوائية
                 const changePercent = (Math.random() - 0.5) * 2; // -1% to +1%
                 const priceChange = stock.price * (changePercent / 100);
                 stock.price += priceChange;
-                stock.change += priceChange;
-                stock.changePercent = (stock.change / (stock.price - stock.change)) * 100;
+                // حساب التغيير بناءً على السعر الأصلي
+                const initialPrice = stock.initialPrice || stock.price;
+                stock.change = stock.price - initialPrice;
+                stock.changePercent = (stock.change / initialPrice) * 100;
             });
             this.updateStocksDisplay();
         }, 5000);
+    }
+    destroy() {
+        // تنظيف الموارد عند إزالة المثيل
+        if (this.stockUpdateInterval !== null) {
+            window.clearInterval(this.stockUpdateInterval);
+            this.stockUpdateInterval = null;
+        }
     }
     updateStocksDisplay() {
         const stocksGrid = document.getElementById('stocks-grid');
@@ -306,8 +320,10 @@ class FundingTracker {
             this.showMessage(`المبلغ المتاح للسحب: $${availableBalance.toFixed(2)} فقط`, 'error');
             return;
         }
+        // تحقق بسيط من عنوان المحفظة (يمكن تحسينه لاحقاً)
+        // ملاحظة: هذا تحقق أساسي فقط للعرض التوضيحي
         if (!address || address.length < 10) {
-            this.showMessage('يرجى إدخال عنوان محفظة صحيح', 'error');
+            this.showMessage('يرجى إدخال عنوان محفظة صحيح (10 أحرف على الأقل)', 'error');
             return;
         }
         // تسجيل عملية السحب

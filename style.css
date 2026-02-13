@@ -244,6 +244,23 @@ footer {
     transform: none;
 }
 
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.1em;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.cancel-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(108, 117, 125, 0.3);
+    background: #5a6268;
+}
+
 /* Stock Trading Section */
 .stocks-grid {
     display: grid;

@@ -31,6 +31,7 @@ class FundingTracker {
     private readonly START_PRICE: number = 3;      // سعر أول سهم
     private readonly END_PRICE: number = 550;       // سعر آخر سهم
     private stocks: StockData[] = [];
+    private stockUpdateInterval: number | null = null;
 
     constructor() {
         this.loadFromStorage();
@@ -287,22 +288,39 @@ class FundingTracker {
                 volume: '890M'
             }
         ];
+        
+        // Store initial prices for accurate percentage calculation
+        this.stocks.forEach(stock => {
+            (stock as any).initialPrice = stock.price;
+        });
+        
         this.updateStocksDisplay();
     }
 
     private startStockUpdates(): void {
         // تحديث الأسعار كل 5 ثواني
-        setInterval(() => {
+        this.stockUpdateInterval = window.setInterval(() => {
             this.stocks.forEach(stock => {
                 // محاكاة تغيير السعر بنسبة عشوائية
                 const changePercent = (Math.random() - 0.5) * 2; // -1% to +1%
                 const priceChange = stock.price * (changePercent / 100);
                 stock.price += priceChange;
-                stock.change += priceChange;
-                stock.changePercent = (stock.change / (stock.price - stock.change)) * 100;
+                
+                // حساب التغيير بناءً على السعر الأصلي
+                const initialPrice = (stock as any).initialPrice || stock.price;
+                stock.change = stock.price - initialPrice;
+                stock.changePercent = (stock.change / initialPrice) * 100;
             });
             this.updateStocksDisplay();
         }, 5000);
+    }
+
+    public destroy(): void {
+        // تنظيف الموارد عند إزالة المثيل
+        if (this.stockUpdateInterval !== null) {
+            window.clearInterval(this.stockUpdateInterval);
+            this.stockUpdateInterval = null;
+        }
     }
 
     private updateStocksDisplay(): void {
@@ -381,8 +399,10 @@ class FundingTracker {
             return;
         }
         
+        // تحقق بسيط من عنوان المحفظة (يمكن تحسينه لاحقاً)
+        // ملاحظة: هذا تحقق أساسي فقط للعرض التوضيحي
         if (!address || address.length < 10) {
-            this.showMessage('يرجى إدخال عنوان محفظة صحيح', 'error');
+            this.showMessage('يرجى إدخال عنوان محفظة صحيح (10 أحرف على الأقل)', 'error');
             return;
         }
         
